@@ -1,0 +1,14 @@
+{
+  "name": "http2-client",
+  "version": "1.0.0",
+  "description": "simple http2 client",
+  "main": "src/HTTP2Client.mjs",
+  "scripts": {
+    "test": "node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.mjs"
+  },
+  "author": "Lina van der Weg",
+  "license": "MIT",
+  "devDependencies": {
+    "section-tests": "^2.2.1"
+  }
+}
