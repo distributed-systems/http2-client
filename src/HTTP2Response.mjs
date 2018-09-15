@@ -1,7 +1,7 @@
 'use strict';
 
 
-import HTTP2IncomingMessage from '../es-modules/distributed-systems/http2-lib/v1.0.0/src/HTTP2IncomingMessage.mjs'
+import HTTP2IncomingMessage from '../es-modules/distributed-systems/http2-lib/x/src/HTTP2IncomingMessage.mjs'
 
 
 export default class HTTP2Response extends HTTP2IncomingMessage {

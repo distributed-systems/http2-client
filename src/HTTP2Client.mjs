@@ -44,6 +44,34 @@ class HTTP2Client {
 
 
     /**
+     * set the certificate to use for all requests that have not set already one
+     *
+     * @param      {string}  certificate  The certificate
+     * @return     {Object}  this
+     */
+    ca(certificate) {
+        this.certificate = certificate;
+        return this;
+    }
+
+
+
+
+
+    /**
+     * set the host to add to all requests starting without http in the url
+     *
+     * @param      {string}  host    host
+     */
+    host(hostname) {
+        this.hostname = hostname;
+        return this;
+    }
+
+
+
+
+    /**
     * create a http2 session that can be used to send requests or
     * return an existing one
     *
@@ -114,8 +142,11 @@ methods.forEach((method) => {
     */
     HTTP2Client.prototype[method] = function(requestURL) {
         const request = new HTTP2Request({
-            client: this
+            client: this,
+            certificate: this.certificate,
+            hostname: this.hostname,
         });
+
 
         return request[method](requestURL);
     }

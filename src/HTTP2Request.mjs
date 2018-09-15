@@ -2,7 +2,7 @@
 
 
 import http2 from 'http2';
-import HTTP2OutgoingMessage from '../es-modules/distributed-systems/http2-lib/v1.0.0/src/HTTP2OutgoingMessage.mjs'
+import HTTP2OutgoingMessage from '../es-modules/distributed-systems/http2-lib/x/src/HTTP2OutgoingMessage.mjs'
 import HTTP2Response from './HTTP2Response.mjs';
 
 
@@ -26,8 +26,13 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
     constructor({
         client,
+        hostname,
+        certificate
     }) {
         super();
+
+        if (certificate) this.ca(certificate);
+        if (hostname) this.hostname = hostname;
 
         this.client = client;
         this.query = new URLSearchParams();
@@ -42,6 +47,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     */
     method(methodName) {
         this.methodName = methodName;
+        return this;
     }
 
 
@@ -52,7 +58,12 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     * @param {string} URL - the url for the request
     */
     url(url) {
+        if (!url.startsWith('http://') && !url.startsWith('https://') && this.hostname) {
+            url = `${this.hostname}${url}`;
+        }
+        
         this.requestURL = new URL(url);
+        return this;
     }
 
 
@@ -153,6 +164,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         // load a valid http session
         const session = await this.loadSession();
         this._stream = session.request(headers);
+        return this;
     }
 
 
@@ -230,6 +242,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     */
     setQueryParameter(key, value) {
         this.query.set(key, value);
+        return this;
     }
 
 
@@ -239,6 +252,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     */
     expect(...statusCodes) {
         statusCodes.forEach(code => this.expectedStatusCodes.add(code));
+        return this;
     }
 
 
