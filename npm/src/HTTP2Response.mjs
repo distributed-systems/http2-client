@@ -1,4 +1,4 @@
-import { HTTP2IncomingMessage } from '../es-modules/distributed-systems/http2-lib/x/index.mjs'
+import { HTTP2IncomingMessage } from '@distributed-systems/http2-lib/index.mjs'
 
 
 export default class HTTP2Response extends HTTP2IncomingMessage {
