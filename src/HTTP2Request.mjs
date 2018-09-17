@@ -270,7 +270,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         await this.sendHeaders();
 
         // wait for the response before we're returning a thing
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
 
             // wait for the actual response
             this._stream.on('response', (headers) => {
@@ -280,6 +280,16 @@ class HTTP2Request extends HTTP2OutgoingMessage {
                     stream: this._stream,
                     headers: headers
                 });
+
+                if (this.expectedStatusCodes.size) {
+                    if (!this.expectedStatusCodes.has(response.status())) {
+                        const statusCodesMessage = this.expectedStatusCodes.size === 1 ? 
+                            `${this.expectedStatusCodes.values().next().value}` : 
+                            `one of ${[...this.expectedStatusCodes.values()].join(', ')}`;
+
+                        return reject(new Error(`The response for the ${this.methodName.toUpperCase()} request to '${this.requestURL}' returned the status ${response.status()}, expected the status to be ${statusCodesMessage}!`));
+                    }
+                }
 
                 resolve(response);
             });
