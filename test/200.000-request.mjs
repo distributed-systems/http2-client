@@ -2,7 +2,7 @@
 
 import section from 'section-tests';
 import HTTP2Client from '../src/HTTP2Client.mjs';
-import HTTP2Server from '../es-modules/distributed-systems/http2-server/v1.0.0/src/HTTP2Server.mjs'
+import HTTP2Server from '../es-modules/distributed-systems/http2-server/x/src/HTTP2Server.mjs'
 import assert from 'assert';
 import path from 'path';
 import fs from 'fs';
