@@ -270,18 +270,37 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         await this.sendHeaders();
 
         // wait for the response before we're returning a thing
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
 
             // wait for the actual response
             this._stream.on('response', (headers) => {
-                
-                // create our custom response stream
-                const response = new HTTP2Response({
-                    stream: this._stream,
-                    headers: headers
-                });
+                (async () => {
 
-                resolve(response);
+                    // create our custom response stream
+                    const response = new HTTP2Response({
+                        stream: this._stream,
+                        headers: headers
+                    });
+
+
+                    if (this.expectedStatusCodes.size) {
+                        if (!this.expectedStatusCodes.has(response.status())) {
+                            const statusCodesMessage = this.expectedStatusCodes.size === 1 ? 
+                                `${this.expectedStatusCodes.values().next().value}` : 
+                                `one of ${[...this.expectedStatusCodes.values()].join(', ')}`;
+
+                            let additionalData = '';
+                            if (response.hasHeader('content-type') && response.getHeader('content-type').toLowerCase() === 'application/json') {
+                                const data = await response.getData();
+                                additionalData = ` (${JSON.stringify(data)})`;
+                            }
+
+                            throw new Error(`The response for the ${this.methodName.toUpperCase()} request to '${this.requestURL}' returned the status ${response.status()}, expected the status to be ${statusCodesMessage}${additionalData}!`);
+                        }
+                    }
+
+                    return response;
+                })().catch(reject).then(resolve);
             });
 
             // send & end
