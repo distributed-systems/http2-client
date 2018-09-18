@@ -32,7 +32,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         if (hostname) this.hostname = hostname;
 
         this.client = client;
-        this.query = new URLSearchParams();
+        this._query = new URLSearchParams();
         this.expectedStatusCodes = new Set();
     }
 
@@ -151,7 +151,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         const headers = this.getHeaderObject();
 
         // get the query string
-        const query = this.query.toString();
+        const query = this._query.toString();
 
         // set method & path http2 header
         headers[':path'] = this.requestURL.pathname + (query ? '?'+query : '');
@@ -204,6 +204,16 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
 
+
+
+    /**
+     * alias for setQuery
+     */
+    query(parameters) {
+        return this.setQuery(parameters);
+    }
+
+
     
     /**
     * set multiple query parameters
@@ -238,7 +248,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     * @returns {object} this
     */
     setQueryParameter(key, value) {
-        this.query.set(key, value);
+        this._query.set(key, value);
         return this;
     }
 
