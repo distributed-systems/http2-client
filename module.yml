@@ -2,10 +2,14 @@ name: http2-client
 organization: distributed-systems
 version: 1.0.0
 commands:
-    test: node --no-warnings --experimental-modules ./es-modules/distributed-systems/section-tests/x/bin/section.mjs ./test/*.mjs
+    test: node --no-warnings --experimental-modules ./es-modules/distributed-systems/section-tests/x/bin/run.mjs ./test/*.mjs
 npm-convert:
     source:
         - ./src
     destination: ./npm
     mapping:
         distributed-systems/http2-lib: @distributed-systems/http2-lib
+dev-link:
+    - section-tests
+    - http2-lib
+    - http2-server

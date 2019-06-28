@@ -1,6 +1,6 @@
 'use strict';
 
-import section from 'section-tests';
+import section from '../es-modules/distributed-systems/section-tests/x/index.mjs';
 import HTTP2Client from '../src/HTTP2Client.mjs';
 import assert from 'assert';
 
