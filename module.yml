@@ -1,6 +1,6 @@
 name: http2-client
 organization: distributed-systems
-version: 2.0.0
+version: 2.0.1
 commands:
     test: node --no-warnings --experimental-modules ./es-modules/distributed-systems/section-tests/x/bin/run.js ./test/*.js
 npm-convert:

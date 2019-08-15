@@ -1,6 +1,3 @@
-'use strict';
-
-
 import http2 from 'http2';
 import EventEmitter from 'events';
 

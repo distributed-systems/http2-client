@@ -1,6 +1,6 @@
 {
   "name": "@distributed-systems/http2-client",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "simple http2 client",
   "main": "./npm/src/HTTP2Client.js",
   "scripts": {
@@ -9,7 +9,7 @@
   "author": "Lina van der Weg",
   "license": "MIT",
   "dependencies": {
-    "@distributed-systems/http2-lib": "^1.1.1"
+    "@distributed-systems/http2-lib": "^2.0.2"
   },
   "type": "module"
 }
