@@ -1,8 +1,6 @@
-'use strict';
-
-import section from 'section-tests';
-import HTTP2Client from '../src/HTTP2Client.mjs';
-import HTTP2Server from '../es-modules/distributed-systems/http2-server/x/src/HTTP2Server.mjs'
+import section, {SpecReporter} from '../es-modules/distributed-systems/section-tests/x/index.js';
+import HTTP2Client from '../src/HTTP2Client.js';
+import HTTP2Server from '../es-modules/distributed-systems/http2-server/x/src/HTTP2Server.js'
 import assert from 'assert';
 import path from 'path';
 import fs from 'fs';

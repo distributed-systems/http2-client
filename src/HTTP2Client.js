@@ -1,6 +1,6 @@
 import http2 from 'http2';
-import HTTP2Session from './HTTP2Session.mjs';
-import HTTP2Request from './HTTP2Request.mjs';
+import HTTP2Session from './HTTP2Session.js';
+import HTTP2Request from './HTTP2Request.js';
 
 
 
@@ -127,6 +127,7 @@ class HTTP2Client {
         session.on('end', () => {
             this.sessions.delete(origin);
         });
+
 
 
         // publish

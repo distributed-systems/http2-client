@@ -1,6 +1,6 @@
 import http2 from 'http2';
 import { HTTP2OutgoingMessage } from '@distributed-systems/http2-lib'
-import HTTP2Response from './HTTP2Response.mjs';
+import HTTP2Response from './HTTP2Response.js';
 
 
 
@@ -77,6 +77,34 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         return this;
     }
+
+
+
+
+
+    /**
+     * time it may take until the response is starting to get back.
+     *
+     * @param      {number}  msecs   The msecs
+     */
+    responseTimeout(msecs) {
+        this._responsetimeoutTime = msecs;
+        return this;
+    }
+
+
+
+
+    /**
+     * time the entire request may take. the request will be aborted after this timeout
+     *
+     * @param      {number}  msecs   The msecs
+     */
+    timeout(msecs) {
+        this._timeoutTime = msecs;
+        return this;
+    }
+
 
 
 
@@ -160,14 +188,59 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         // load a valid http session
         const session = await this.loadSession();
+
+        // send headers
         this._stream = session.request(headers);
+
+        // catch errors
+        this._stream.on('error', (err) => {
+            if (this._reject) {
+                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
+                this._reject(err);
+            } else console.log(err);
+        });
+        
+
+
+        // set timeouts
+        if (this._timeoutTime) {
+            this._timeoutTimer = setTimeout(() => {
+
+                // abort if the data is being received or the response
+                // was not received at all
+                if (this._receivingData || !this._responseReceived) {
+                    this.abort();
+                    
+                    if (this._reject) {
+                        this._reject(new Error(`${this.methodName.toUpperCase()} request to '${this.requestURL}' timed out after ${this._timeoutTime} milliseconds!`));
+                    }
+                }
+            }, this._timeoutTime);
+        }
+
+        if (this._responsetimeoutTime) {
+            this._responsetimeoutTimer = setTimeout(() => {
+                this.abort();
+
+                if (this._reject) {
+                    this._reject(new Error(`${this.methodName.toUpperCase()} request to '${this.requestURL}' timed out after ${this._responsetimeoutTime} milliseconds: no response received!`));
+                }
+            }, this._responsetimeoutTime);
+        }
+
         return this;
     }
 
 
 
 
-
+    /**
+     * abort the request & response
+     */
+    abort() {
+        if (this._stream) this._stream.close();
+        return this;
+    }
 
 
 
@@ -199,7 +272,6 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     */
     async stream() {
 
-        
     }
 
 
@@ -281,9 +353,13 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         // wait for the response before we're returning a thing
         return new Promise((resolve, reject) => {
+            this._reject = reject;
 
             // wait for the actual response
             this._stream.on('response', (headers) => {
+                clearTimeout(this._responsetimeoutTimer);
+                this._responseReceived = true;
+
                 (async () => {
 
                     // create our custom response stream
