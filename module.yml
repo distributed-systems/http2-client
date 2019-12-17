@@ -1,8 +1,8 @@
 name: http2-client
 organization: distributed-systems
-version: 1.0.0
+version: 2.0.1
 commands:
-    test: node --no-warnings --experimental-modules ./es-modules/distributed-systems/section-tests/x/bin/run.mjs ./test/*.mjs
+    test: node --no-warnings --experimental-modules ./es-modules/distributed-systems/section-tests/x/bin/run.js ./test/*.js
 npm-convert:
     source:
         - ./src
@@ -12,4 +12,5 @@ npm-convert:
 dev-link:
     - section-tests
     - http2-lib
+    - types
     - http2-server

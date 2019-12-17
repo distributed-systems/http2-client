@@ -1,6 +1,6 @@
 import http2 from 'http2';
-import { HTTP2OutgoingMessage } from '../es-modules/distributed-systems/http2-lib/x/index.mjs'
-import HTTP2Response from './HTTP2Response.mjs';
+import { HTTP2OutgoingMessage } from '../es-modules/distributed-systems/http2-lib/x/index.js'
+import HTTP2Response from './HTTP2Response.js';
 
 
 
@@ -191,6 +191,16 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         // send headers
         this._stream = session.request(headers);
+
+        // catch errors
+        this._stream.on('error', (err) => {
+            if (this._reject) {
+                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
+                this._reject(err);
+            } else console.log(err);
+        });
+        
+
 
         // set timeouts
         if (this._timeoutTime) {

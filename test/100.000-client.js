@@ -1,7 +1,5 @@
-'use strict';
-
-import section from '../es-modules/distributed-systems/section-tests/x/index.mjs';
-import HTTP2Client from '../src/HTTP2Client.mjs';
+import section, {SpecReporter} from '../es-modules/distributed-systems/section-tests/x/index.js';
+import HTTP2Client from '../src/HTTP2Client.js';
 import assert from 'assert';
 
 
