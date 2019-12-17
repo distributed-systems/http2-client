@@ -183,7 +183,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         // set method & path http2 header
         headers[':path'] = this.requestURL.pathname + (query ? '?'+query : '');
-        headers[':method'] = this.methodName;
+        headers[':method'] = this.methodName.toUpperCase();
 
 
         // load a valid http session
