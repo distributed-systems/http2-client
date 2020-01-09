@@ -376,9 +376,14 @@ class HTTP2Request extends HTTP2OutgoingMessage {
                                 `one of ${[...this.expectedStatusCodes.values()].join(', ')}`;
 
                             let additionalData = '';
-                            if (response.hasHeader('content-type') && response.getHeader('content-type').toLowerCase() === 'application/json') {
+                            if (response.status() >= 400 && response.status() < 600) {
                                 const data = await response.getData();
-                                additionalData = ` (${JSON.stringify(data)})`;
+                                if (typeof data === 'string') {
+                                    additionalData = ` (${data.substr(0, 1000)})`;
+                                }
+                                if (typeof data === 'object') {
+                                    additionalData = ` (${JSON.stringify(data)})`;
+                                }
                             }
 
                             throw new Error(`The response for the ${this.methodName.toUpperCase()} request to '${this.requestURL}' returned the status ${response.status()}, expected the status to be ${statusCodesMessage}${additionalData}!`);
