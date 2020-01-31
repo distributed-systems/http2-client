@@ -194,6 +194,12 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         // catch errors
         this._stream.on('error', (err) => {
+            if (err.message.includes('NGHTTP2_ENHANCE_YOUR_CALM')) {
+                // destroy session. required due to a node bug that is not filed yet. a new session may
+                // help
+                session.end(err);
+            }
+            
             if (this._reject) {
                 err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
                 this._reject(err);
