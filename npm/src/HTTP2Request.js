@@ -170,6 +170,10 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
 
+
+
+
+
     /**
     * send the request headers, get a valid http session in the process
     */
@@ -192,8 +196,12 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         // send headers
         this._stream = session.request(headers);
 
-        // catch errors
-        this._stream.on('error', (err) => {
+
+        // catch errors. be aware, that if the event listener is not deregistered later, it is retained
+        // in the event listener queue until the stream is closed which may not happen very often if ever
+        // which will lead to a memory leak. we thus save a reference to this closure, so that it can be 
+        // removed when the response is received.
+        this.streamErrorHandler = (err) => {
             if (err.message.includes('NGHTTP2_ENHANCE_YOUR_CALM')) {
                 // destroy session. required due to a node bug that is not filed yet. a new session may
                 // help
@@ -204,7 +212,9 @@ class HTTP2Request extends HTTP2OutgoingMessage {
                 err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
                 this._reject(err);
             } else console.log(err);
-        });
+        };
+
+        this._stream.on('error', this.streamErrorHandler);
         
 
 
@@ -363,6 +373,11 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
             // wait for the actual response
             this._stream.on('response', (headers) => {
+
+                // deregister the error handler on the stream for this request
+                // since a response was received!
+                this._stream.off('error', this.streamErrorHandler);
+
                 clearTimeout(this._responsetimeoutTimer);
                 this._responseReceived = true;
 
