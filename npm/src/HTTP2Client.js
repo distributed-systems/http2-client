@@ -124,7 +124,7 @@ class HTTP2Client {
 
 
         // make sure to remove sessions that are not available anymore
-        session.on('end', () => {
+        session.once('end', () => {
             this.sessions.delete(origin);
         });
 

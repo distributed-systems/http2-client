@@ -214,7 +214,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
             } else console.log(err);
         };
 
-        this._stream.on('error', this.streamErrorHandler);
+        this._stream.once('error', this.streamErrorHandler);
         
 
 
@@ -372,7 +372,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
             this._reject = reject;
 
             // wait for the actual response
-            this._stream.on('response', (headers) => {
+            this._stream.once('response', (headers) => {
 
                 // deregister the error handler on the stream for this request
                 // since a response was received!

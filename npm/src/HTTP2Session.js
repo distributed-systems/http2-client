@@ -64,12 +64,12 @@ export default class HTTP2Session extends EventEmitter {
 
 
             // wait until we've connected to the server
-            this.http2client.on('connect', () => {
+            this.http2client.once('connect', () => {
                 resolve();
             });
 
             // or failed to connect
-            this.http2client.on('error', (err) => {
+            this.http2client.once('error', (err) => {
                 err.message = `Failed to connect to '${origin}': ${err.message}`;
 
                 reject(err);
@@ -77,7 +77,7 @@ export default class HTTP2Session extends EventEmitter {
             });
 
             // end the session as soon the http2 one does
-            this.http2client.on('close', () => {
+            this.http2client.once('close', () => {
                 this.end();
             });
 
