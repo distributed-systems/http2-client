@@ -24,7 +24,8 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     constructor({
         client,
         hostname,
-        certificate
+        certificate,
+        staticHeaders,
     }) {
         super();
 
@@ -34,6 +35,13 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         this.client = client;
         this._query = new URLSearchParams();
         this.expectedStatusCodes = new Set();
+
+        // set statis headers
+        if (staticHeaders) {
+            for (const [key, value] of staticHeaders.entries()) {
+                this.setHeader(key, value);
+            }
+        }
     }
 
 
@@ -166,7 +174,6 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         return this;
     }
-
 
 
 

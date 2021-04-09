@@ -33,9 +33,17 @@ class HTTP2Client {
 
         // terminate idle connections after x seconds
         this.sessionIdleTimeout = sessionIdleTimeout;
+
+        // static headers that are sent with each request
+        this.staticHeaders = new Map();
     }
 
 
+
+
+    header(key, value) {
+        this.staticHeaders.set(key, value);
+    }
 
 
 
@@ -156,6 +164,7 @@ methods.forEach((method) => {
             client: this,
             certificate: this.certificate,
             hostname: this.hostname,
+            staticHeaders: this.staticHeaders,
         });
 
 
