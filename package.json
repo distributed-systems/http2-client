@@ -1,6 +1,6 @@
 {
   "name": "@distributed-systems/http2-client",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "simple http2 client",
   "main": "./npm/src/HTTP2Client.js",
   "scripts": {
