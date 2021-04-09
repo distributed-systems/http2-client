@@ -4,7 +4,6 @@ import HTTP2Request from './HTTP2Request.js';
 
 
 
-
 // valid http2 methods
 const methods = [
     'delete',

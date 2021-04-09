@@ -3,6 +3,7 @@ import { HTTP2OutgoingMessage } from '../es-modules/distributed-systems/http2-li
 import HTTP2Response from './HTTP2Response.js';
 
 
+const { NGHTTP2_CANCEL } = http2.constants;
 
 // valid http2 methods
 const methods = [
@@ -227,7 +228,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
                 // abort if the data is being received or the response
                 // was not received at all
                 if (this._receivingData || !this._responseReceived) {
-                    this.abort();
+                    this.abort(NGHTTP2_CANCEL);
                     
                     if (this._reject) {
                         this._reject(new Error(`${this.methodName.toUpperCase()} request to '${this.requestURL}' timed out after ${this._timeoutTime} milliseconds!`));
@@ -238,7 +239,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         if (this._responsetimeoutTime) {
             this._responsetimeoutTimer = setTimeout(() => {
-                this.abort();
+                this.abort(NGHTTP2_CANCEL);
 
                 if (this._reject) {
                     this._reject(new Error(`${this.methodName.toUpperCase()} request to '${this.requestURL}' timed out after ${this._responsetimeoutTime} milliseconds: no response received!`));
@@ -255,8 +256,8 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     /**
      * abort the request & response
      */
-    abort() {
-        if (this._stream) this._stream.close();
+    abort(code) {
+        if (this._stream) this._stream.close(code);
         return this;
     }
 
