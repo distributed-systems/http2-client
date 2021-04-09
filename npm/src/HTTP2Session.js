@@ -18,7 +18,7 @@ const statusMap = new Map([
 export default class HTTP2Session extends EventEmitter {
 
     constructor({
-        sessionIdleTimeout = 30,
+        sessionIdleTimeout = 600,
     } = {}) {
         super();
 

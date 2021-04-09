@@ -23,7 +23,7 @@ const methods = [
 class HTTP2Client {
 
     constructor({
-        sessionIdleTimeout = 30,
+        sessionIdleTimeout = 600,
     } = {}) {
 
         // maintain a set of sessions to the specific hosts
