@@ -28,6 +28,30 @@ export default class HTTP2Session extends EventEmitter {
         // initialize with the correct status
         this.currentStatus = 0;
         this.setStatus('ready');
+
+        this.requestCount = 0;
+        this.creationTime = Date.now();
+    }
+
+
+
+    /**
+     * returns the number of requests sent over this session
+     *
+     * @return     {number}  The request count
+     */
+    getRequestCount() {
+        return this.requestCount;
+    }
+
+
+    /**
+     * report how log this session is already active
+     *
+     * @return     {number}  The session life time.
+     */
+    getSessionLifeTime() {
+        return Date.now() - this.creationTime;
     }
 
 
@@ -136,6 +160,7 @@ export default class HTTP2Session extends EventEmitter {
     */
     request(headers) {
         if (this.isAvailable()) {
+            this.requestCount++;
             return this.http2client.request(headers);
         } else throw new Error(`Cannot send request on a connection with the status '${this.currentStatusName}'!`);
     }

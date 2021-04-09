@@ -178,7 +178,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     * send the request headers, get a valid http session in the process
     */
     async sendHeaders() {
-        if (typeof this.methodName !== 'string') throw new Error(`Cannot send request, the method was not set!`);
+        if (typeof this.methodName !== 'string') throw new Error(`Cannot send request, the http method was not set!`);
 
         const headers = this.getHeaderObject();
 
@@ -197,26 +197,21 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         this._stream = session.request(headers);
 
 
-        // catch errors. be aware, that if the event listener is not deregistered later, it is retained
-        // in the event listener queue until the stream is closed which may not happen very often if ever
-        // which will lead to a memory leak. we thus save a reference to this closure, so that it can be 
-        // removed when the response is received.
-        this.streamErrorHandler = (err) => {
+        this._stream.on('error', (err) => {
             if (err.message.includes('NGHTTP2_ENHANCE_YOUR_CALM')) {
-                // destroy session. required due to a node bug that is not filed yet. a new session may
-                // help
-                session.end(err);
+                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored after ${session.getRequestCount()} requests in ${session.getSessionLifeTime()} milliseonds to the origin ${this.requestURL.origin}: ${err.message}`;
+            } else {
+                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
             }
+
+            // destroy session. required due to a node bug that is not filed yet. a new session may help
+            session.end(err);
             
             if (this._reject) {
-                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
                 this._reject(err);
-            } else console.log(err);
-        };
-
-        this._stream.once('error', this.streamErrorHandler);
+            } else console.log('unhandled error', err);
+        });
         
-
 
         // set timeouts
         if (this._timeoutTime) {
@@ -270,10 +265,6 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         // get a connection the request a can be sent on
         const session = await this.client.getSession(this.requestURL.origin, this.caCertificate);
-
-        // remove the reference to the client, its not going to be
-        // used anymore
-        this.client = null;
 
         return session;
     }
@@ -373,10 +364,6 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
             // wait for the actual response
             this._stream.once('response', (headers) => {
-
-                // deregister the error handler on the stream for this request
-                // since a response was received!
-                this._stream.off('error', this.streamErrorHandler);
 
                 clearTimeout(this._responsetimeoutTimer);
                 this._responseReceived = true;
