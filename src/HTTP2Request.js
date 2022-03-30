@@ -207,17 +207,14 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         this._stream.on('error', (err) => {
             if (err.message.includes('NGHTTP2_ENHANCE_YOUR_CALM')) {
-                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored after ${session.getRequestCount()} requests in ${session.getSessionLifeTime()} milliseonds to the origin ${this.requestURL.origin}: ${err.message}`;
+                session.enhanceYourCalm();
             } else {
                 err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
+                session.end(err);
+                if (this._reject) {
+                    this._reject(err);
+                } else console.log('unhandled error', err);
             }
-
-            // destroy session. required due to a node bug that is not filed yet. a new session may help
-            session.end(err);
-            
-            if (this._reject) {
-                this._reject(err);
-            } else console.log('unhandled error', err);
         });
         
 

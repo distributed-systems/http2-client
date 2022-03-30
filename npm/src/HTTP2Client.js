@@ -129,6 +129,12 @@ class HTTP2Client {
             sessionIdleTimeout: this.sessionIdleTimeout,
         });
 
+        // cannot use this sesison anymore becuse an enhance your calm frme was
+        // received
+        session.once('enhanceYourCalm', () => {
+            this.sessions.delete(origin);
+        });
+
 
         // make sure to remove sessions that are not available anymore
         session.once('end', () => {

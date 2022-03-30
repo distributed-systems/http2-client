@@ -6,6 +6,7 @@ import assert from 'assert';
 
 
 section.continue('HTTP2 Errors', (section) => {
+
     section.test('GoAway', async () => {
         const server = new HTTP2Server({
             secure: false
@@ -13,7 +14,7 @@ section.continue('HTTP2 Errors', (section) => {
 
 
         server.getRouter().get('/test-1', (request) => {
-            request.response().status(200).send();
+            request.response().status(200).send('the you go');
         });
 
 
@@ -21,7 +22,8 @@ section.continue('HTTP2 Errors', (section) => {
         await server.listen(8000);
 
         const client = new HTTP2Client();
-        await client.get('http://l.dns.porn:8000/test-1?key=value').send();
+        const response = await client.get('http://l.dns.porn:8000/test-1?key=value').send();
+        assert.equal(response.status(), 200);
 
         for (const session of server.activeSessions.values()) {
             session.goaway();
@@ -40,6 +42,7 @@ section.continue('HTTP2 Errors', (section) => {
 
 
 
+
     section.test('Enhance your calm', async () => {
         section.setTimeout(10000);
 
@@ -48,8 +51,8 @@ section.continue('HTTP2 Errors', (section) => {
         });
 
 
-        server.getRouter().get('/test-:id', (request) => {
-            request.response().status(200).send();
+        server.getRouter().get('/test/:id', (request) => {
+            request.response().status(200).send('not so fast mate!');
         });
 
 
@@ -57,15 +60,11 @@ section.continue('HTTP2 Errors', (section) => {
         await server.listen(8000);
 
         const client = new HTTP2Client();
-        const promises = [];
 
-        for (let i = 0; i < 10701; i++) {
-            promises.push(client.get(`http://l.dns.porn:8000/test-${i}`).send());
-        }
-
-        const results = await Promise.all(promises);
-    
-        assert(results.every(res => res.status(200)));
+        await Promise.all(Array(15000).fill(0).map(async (e, i) => {
+            const response = await client.get(`http://l.dns.porn:8000/test/${i}`).send();
+            assert.equal(response.status(), 200);
+        }));
 
         await server.close();
     });

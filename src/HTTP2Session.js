@@ -31,6 +31,19 @@ export default class HTTP2Session extends EventEmitter {
 
         this.requestCount = 0;
         this.creationTime = Date.now();
+
+        this.calmRequested = false;
+    }
+
+
+
+    /**
+     * is set if the peer sends an encance your calm frame. don't open more
+     * streams in that case
+     */
+    enhanceYourCalm() {
+        this.calmRequested = true;
+        this.emit('enhanceYourCalm');
     }
 
 
