@@ -113,6 +113,11 @@ export default class HTTP2Session extends EventEmitter {
                 this.end(err);
             });
 
+            // go away
+            this.http2client.on('goaway', () => {
+                this.end();
+            });
+
             // end the session as soon the http2 one does
             this.http2client.once('close', () => {
                 this.end();
