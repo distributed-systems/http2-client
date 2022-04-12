@@ -114,7 +114,7 @@ export default class HTTP2Session extends EventEmitter {
             });
 
             // go away
-            this.http2client.on('goaway', () => {
+            this.http2client.once('goaway', () => {
                 this.end();
             });
 
