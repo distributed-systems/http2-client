@@ -153,6 +153,7 @@ export default class HTTP2Session extends EventEmitter {
                 this.http2client.close();
             } catch (e) {}
 
+            this.http2client.removeAllListeners();
             this.setStatus(err ? 'failed' : 'closed');
         }
     }

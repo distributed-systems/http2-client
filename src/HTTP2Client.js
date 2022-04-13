@@ -112,7 +112,10 @@ class HTTP2Client {
     async end() {
         for (const session of this.sessions.values()) {
             await session.end();
+            session.removeAllListeners();
         }
+
+        this.sessions.clear();
     }
 
 
@@ -139,6 +142,7 @@ class HTTP2Client {
         // make sure to remove sessions that are not available anymore
         session.once('end', () => {
             this.sessions.delete(origin);
+            session.removeAllListeners();
         });
 
 

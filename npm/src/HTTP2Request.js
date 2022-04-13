@@ -254,7 +254,11 @@ class HTTP2Request extends HTTP2OutgoingMessage {
      * abort the request & response
      */
     abort(code) {
-        if (this._stream) this._stream.close(code);
+        if (this._stream) {
+            this._stream.close(code);
+            delete this._stream;
+        }
+
         return this;
     }
 
@@ -270,6 +274,9 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         // get a connection the request a can be sent on
         const session = await this.client.getSession(this.requestURL.origin, this.caCertificate);
+
+        // the client is not required anymore
+        delete this.client;
 
         return session;
     }
@@ -381,6 +388,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
                         headers: headers
                     });
 
+                    delete this._stream;
 
                     if (this.expectedStatusCodes.size) {
                         if (!this.expectedStatusCodes.has(response.status())) {
