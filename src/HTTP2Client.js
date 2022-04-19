@@ -22,8 +22,12 @@ const methods = [
 class HTTP2Client {
 
     constructor({
-        sessionIdleTimeout = 600,
+        sessionIdleTimeout = 60 * 1000,
+        requestsPerSessionPerSecond = 10000,
     } = {}) {
+
+        // rate limiting options
+        this.requestsPerSessionPerSecond = requestsPerSessionPerSecond;
 
         // maintain a set of sessions to the specific hosts
         // in order to make effective use of http2
@@ -135,7 +139,9 @@ class HTTP2Client {
                     ca: localCa || this.certificate,
                 });
 
-                const http2Session = new HTTP2ClientSession(session);
+                const http2Session = new HTTP2ClientSession(session, {
+                    requestsPerSessionPerSecond: this.requestsPerSessionPerSecond
+                });
 
                 http2Session.once('close', () => {
                     this.sessions.delete(localOrigin);
@@ -159,7 +165,7 @@ class HTTP2Client {
 
         origin = null;
         ca = null;
-        
+
         return session;
     }
 }
