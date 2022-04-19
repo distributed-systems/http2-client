@@ -1,7 +1,10 @@
 import http2 from 'http2';
 import HTTP2ClientSession from './HTTP2ClientSession.js';
 import HTTP2Request from './HTTP2Request.js';
-import HTTP2Response from './HTTP2Response.js';
+import logd from 'logd';
+
+
+const log = logd.module('HTTP2Client');
 
 
 
@@ -46,6 +49,7 @@ class HTTP2Client {
 
 
     header(key, value) {
+        log.debug(`Adding header ${key}: ${value}`);
         this.staticHeaders.set(key, value);
     }
 
@@ -58,6 +62,7 @@ class HTTP2Client {
      * @return     {Object}  this
      */
     ca(certificate) {
+        log.debug(`Setting the certificate to ${certificate}`);
         this.certificate = certificate;
         return this;
     }
@@ -72,6 +77,7 @@ class HTTP2Client {
      * @param      {string}  host    host
      */
     host(hostname) {
+        log.debug(`Setting the host to ${hostname}`);
         this.hostname = hostname;
         return this;
     }
@@ -102,7 +108,7 @@ class HTTP2Client {
         // it will resolve immediately
         await session.connect(origin, CACertificate);
 
-
+        log.debug(`Retruning session for ${origin}`);
         return session;
     }
 
@@ -133,6 +139,7 @@ class HTTP2Client {
 
     async createSession(origin, ca) {
         if (!this.sessions.has(origin)) {
+            log.debug(`Creating a new session for ${origin}`);
             this.sessions.set(origin, (async() => {
                 const localOrigin = origin;
                 const localCa = ca;
@@ -156,6 +163,7 @@ class HTTP2Client {
 
                 await new Promise((resolve) => {
                     session.once('connect', () => {
+                        log.debug(`Connected to ${localOrigin}`);
                         resolve();
                     });
                 });

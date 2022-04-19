@@ -1,4 +1,7 @@
+import logd from 'logd';
 
+
+const log = logd.module('RequestRateLimiter');
 
 
 export default class RequestRateLimiter {
@@ -27,6 +30,7 @@ export default class RequestRateLimiter {
             this.openRequests++;
         } else {
             return new Promise((resolve) => {
+                log.debug(`Queueing request at position ${this.queue.length}`);
                 this.queue.push(resolve);
             });
         }

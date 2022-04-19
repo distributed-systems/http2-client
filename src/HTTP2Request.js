@@ -1,6 +1,10 @@
 import http2 from 'http2';
 import HTTP2Response from './HTTP2Response.js';
 import { HTTP2OutgoingMessage } from '@distributed-systems/http2-lib';
+import logd from 'logd';
+
+
+const log = logd.module('HTTP2Request');
 
 
 const { NGHTTP2_CANCEL } = http2.constants;
@@ -357,6 +361,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
             // wait for the response
             stream.once('response', (headers) => {
+                log.debug(`Received response for '${this.methodName.toUpperCase()} ${this.requestURL}'`);
                 (async () => {
 
                     // create our custom response stream
@@ -388,6 +393,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
             });
 
             // send & end
+            log.debug(`Sending data to '${this.requestURL}'`);
             this.getRawStream().end(this.getData());
         });
     }

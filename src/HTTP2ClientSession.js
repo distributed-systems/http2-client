@@ -20,11 +20,13 @@ export default class HTTP2ClientSession extends EventEmitter {
 
         // maximum of concurrent requests
         if (maxConcurrentRequests) {
+            log.debug(`Setting max concurrent requests to ${maxConcurrentRequests}`);
             this.requestRateLimiter = new RequestRateLimiter(maxConcurrentRequests);
         }
 
         // rate limiting
         if (requestsPerSessionPerSecond) {
+            log.debug(`Setting requests per session per second to ${requestsPerSessionPerSecond}`);
             this.bucket = new LeakyBucket({
                 capacity: requestsPerSessionPerSecond,
                 interval: 1,
@@ -96,6 +98,7 @@ export default class HTTP2ClientSession extends EventEmitter {
      * @param {*} headers 
      */
     async request(headers) {
+        log.debug(`Creating a new stream for origin ${headers[':path']}`);
 
         // rate limiting
         if (this.bucket) {
@@ -110,6 +113,7 @@ export default class HTTP2ClientSession extends EventEmitter {
         const stream = this.session.request(headers);
         const http2Stream = new HTTP2Stream(stream);
 
+        // release the request slot
         if (this.requestRateLimiter ) {
             http2Stream.once('end', () => {
                 this.requestRateLimiter.release();
@@ -118,8 +122,11 @@ export default class HTTP2ClientSession extends EventEmitter {
         
         // kill the session if the remote end think there is going on too much
         http2Stream.once('enhance_your_calm', () => {
+            log.debug('The remote end has said to enhance your calm');
             this.end();
         });
+
+        log.debug(`Created a new stream for origin ${headers[':path']}`);
 
         return http2Stream;
     }
