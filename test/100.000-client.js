@@ -1,4 +1,4 @@
-import section, {SpecReporter} from '../es-modules/distributed-systems/section-tests/x/index.js';
+import section from 'section-tests';
 import HTTP2Client from '../src/HTTP2Client.js';
 import assert from 'assert';
 

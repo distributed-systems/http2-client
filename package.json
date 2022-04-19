@@ -2,14 +2,20 @@
   "name": "@distributed-systems/http2-client",
   "version": "2.2.7",
   "description": "simple http2 client",
-  "main": "./npm/src/HTTP2Client.js",
+  "main": "./src/HTTP2Client.js",
   "scripts": {
-    "test": "node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.js"
+    "test": "node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.js --dev --log-level=error+ --log-module=*"
   },
   "author": "Lina van der Weg",
   "license": "MIT",
   "dependencies": {
-    "@distributed-systems/http2-lib": "^2.0.2"
+    "@distributed-systems/http2-lib": "^3.0.1",
+    "logd": "^2.3.1"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@distributed-systems/http2-server": "^3.0.0",
+    "logd-console-transport": "^1.1.0",
+    "section-tests": "^3.2.1"
+  }
 }

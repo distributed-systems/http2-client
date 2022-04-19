@@ -1,6 +1,7 @@
 import http2 from 'http2';
-import HTTP2Session from './HTTP2Session.js';
+import HTTP2ClientSession from './HTTP2ClientSession.js';
 import HTTP2Request from './HTTP2Request.js';
+import HTTP2Response from './HTTP2Response.js';
 
 
 
@@ -14,8 +15,6 @@ const methods = [
     'post',
     'put',
 ];
-
-
 
 
 
@@ -110,9 +109,9 @@ class HTTP2Client {
      * @return     {Promise}  undefined
      */
     async end() {
-        for (const session of this.sessions.values()) {
+        for (const promise of this.sessions.values()) {
+            const session = await promise;
             await session.end();
-            session.removeAllListeners();
         }
 
         this.sessions.clear();
@@ -120,35 +119,36 @@ class HTTP2Client {
 
 
 
+    async createStream(origin, headers, ca) {
+        const session = await this.createSession(origin, ca);
+        return session.request(headers);
+    }
 
 
-    /**
-    * create a new http2 session to the specified origin
-    *
-    * @private 
-    */
-    createSession(origin) {
-        const session = new HTTP2Session({
-            sessionIdleTimeout: this.sessionIdleTimeout,
-        });
+    async createSession(origin, ca) {
+        if (!this.sessions.has(origin)) {
+            this.sessions.set(origin, (async() => {
+                const session = http2.connect(origin, {
+                    ca: ca || this.certificate,
+                });
 
-        // cannot use this sesison anymore becuse an enhance your calm frme was
-        // received
-        session.once('enhanceYourCalm', () => {
-            this.sessions.delete(origin);
-        });
+                const http2Session = new HTTP2ClientSession(session);
 
+                http2Session.once('close', () => {
+                    this.sessions.delete(origin);
+                });
 
-        // make sure to remove sessions that are not available anymore
-        session.once('end', () => {
-            this.sessions.delete(origin);
-            session.removeAllListeners();
-        });
+                await new Promise((resolve) => {
+                    session.once('connect', () => {
+                        resolve();
+                    });
+                });
 
+                return http2Session;
+            })());
+        }
 
-
-        // publish
-        this.sessions.set(origin, session);
+        return this.sessions.get(origin);
     }
 }
 
@@ -169,9 +169,12 @@ methods.forEach((method) => {
     * @returns {HTTP2Request}
     */
     HTTP2Client.prototype[method] = function(requestURL) {
+        const createStream = async(origin, headers, ca) => {
+            return this.createStream(origin, headers, ca);
+        }
+
         const request = new HTTP2Request({
-            client: this,
-            certificate: this.certificate,
+            createStream,
             hostname: this.hostname,
             staticHeaders: this.staticHeaders,
         });

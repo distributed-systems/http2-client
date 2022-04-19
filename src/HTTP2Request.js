@@ -1,6 +1,6 @@
 import http2 from 'http2';
-import { HTTP2OutgoingMessage } from '../es-modules/distributed-systems/http2-lib/x/index.js'
 import HTTP2Response from './HTTP2Response.js';
+import { HTTP2OutgoingMessage } from '@distributed-systems/http2-lib';
 
 
 const { NGHTTP2_CANCEL } = http2.constants;
@@ -23,17 +23,16 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
     constructor({
-        client,
+        createStream,
         hostname,
-        certificate,
         staticHeaders,
     }) {
         super();
 
-        if (certificate) this.ca(certificate);
+        this.createStream = createStream;
+
         if (hostname) this.hostname = hostname;
 
-        this.client = client;
         this._query = new URLSearchParams();
         this.expectedStatusCodes = new Set();
 
@@ -73,22 +72,15 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     }
 
 
-
     /**
-    * set a ca certificate
-    *
-    * @param {buffer} certificate - a ca certificate to trust
-    *
-    * @returns {object} this
-    */
-    ca(certificate) {
-        this.caCertificate = certificate;
-
+     * set the ca for the request
+     * 
+     * @param {string} ca 
+     */
+    ca(ca) {
+        this._ca = ca;
         return this;
     }
-
-
-
 
 
     /**
@@ -182,70 +174,6 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
 
-    /**
-    * send the request headers, get a valid http session in the process
-    */
-    async sendHeaders() {
-        if (typeof this.methodName !== 'string') throw new Error(`Cannot send request, the http method was not set!`);
-
-        const headers = this.getHeaderObject();
-
-        // get the query string
-        const query = this._query.toString();
-
-        // set method & path http2 header
-        headers[':path'] = this.requestURL.pathname + (query ? '?'+query : '');
-        headers[':method'] = this.methodName.toUpperCase();
-
-
-        // load a valid http session
-        const session = await this.loadSession();
-
-        // send headers
-        this._stream = session.request(headers);
-
-
-        this._stream.on('error', (err) => {
-            if (err.message.includes('NGHTTP2_ENHANCE_YOUR_CALM')) {
-                session.enhanceYourCalm();
-            } else {
-                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
-                session.end(err);
-                if (this._reject) {
-                    this._reject(err);
-                } else console.log('unhandled error', err);
-            }
-        });
-        
-
-        // set timeouts
-        if (this._timeoutTime) {
-            this._timeoutTimer = setTimeout(() => {
-
-                // abort if the data is being received or the response
-                // was not received at all
-                if (this._receivingData || !this._responseReceived) {
-                    this.abort(NGHTTP2_CANCEL);
-                    
-                    if (this._reject) {
-                        this._reject(new Error(`${this.methodName.toUpperCase()} request to '${this.requestURL}' timed out after ${this._timeoutTime} milliseconds!`));
-                    }
-                }
-            }, this._timeoutTime);
-        }
-
-        if (this._responsetimeoutTime) {
-            this._responsetimeoutTimer = setTimeout(() => {
-                this.abort(NGHTTP2_CANCEL);
-
-                if (this._reject) {
-                    this._reject(new Error(`${this.methodName.toUpperCase()} request to '${this.requestURL}' timed out after ${this._responsetimeoutTime} milliseconds: no response received!`));
-                }
-            }, this._responsetimeoutTime);
-        }
-
-        return this;
-    }
 
 
 
@@ -254,31 +182,13 @@ class HTTP2Request extends HTTP2OutgoingMessage {
      * abort the request & response
      */
     abort(code) {
-        if (this._stream) {
-            this._stream.close(code);
-            delete this._stream;
+        const stream = this.getStream();
+
+        if (stream) {
+            stream.end(code);
         }
 
         return this;
-    }
-
-
-
-
-
-    /**
-    * get a http session for creating a request stream
-    */
-    async loadSession() {
-        if (typeof this.requestURL !== 'object') throw new Error(`Cannot send request, the URL was not set!`);
-
-        // get a connection the request a can be sent on
-        const session = await this.client.getSession(this.requestURL.origin, this.caCertificate);
-
-        // the client is not required anymore
-        delete this.client;
-
-        return session;
     }
 
 
@@ -355,6 +265,33 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
 
+    /**
+    * send the request headers, get a valid http session in the process
+    */
+     async sendHeaders() {
+        if (typeof this.methodName !== 'string') throw new Error(`Cannot send request, the http method was not set!`);
+
+        const headers = this.getHeaderObject();
+
+        // get the query string
+        const query = this._query.toString();
+
+        // set method & path http2 header
+        headers[':path'] = this.requestURL.pathname + (query ? '?'+query : '');
+        headers[':method'] = this.methodName.toUpperCase();
+
+
+        // create stream, send headers
+        const http2Stream = await this.createStream(this.requestURL.origin, headers, this._ca);
+        this.setStream(http2Stream);
+
+        // we just need to create a stream once
+        this.createStream = null;
+
+        return this;
+    }
+
+
 
 
     /**
@@ -372,23 +309,44 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
         // wait for the response before we're returning a thing
         return new Promise((resolve, reject) => {
-            this._reject = reject;
+            const stream = this.getStream();
 
-            // wait for the actual response
-            this._stream.once('response', (headers) => {
+            // handle stream errors
+            stream.once('error', (err) => {
+                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
+                reject(err);
+            });
 
-                clearTimeout(this._responsetimeoutTimer);
-                this._responseReceived = true;
+            if (this._timeoutTime) {
+                let timeoutTimer = setTimeout(() => {
+                    this.abort(NGHTTP2_CANCEL);
+                    reject(new Error(`The ${this.methodName.toUpperCase()} request to '${this.requestURL}' timed out after ${this._timeoutTime}ms!`));
+                }, this._timeoutTime);
 
+                stream.once('end', () => {
+                    clearTimeout(timeoutTimer);
+                });
+            }
+
+
+            if (this._responsetimeoutTime) {
+                let responseTimeoutTimer = setTimeout(() => {
+                    this.abort(NGHTTP2_CANCEL);
+                    reject(new Error(`The ${this.methodName.toUpperCase()} request to '${this.requestURL}' timed out after ${this._responsetimeoutTime}ms!`));
+                }, this._responsetimeoutTime);
+
+                stream.once('response', () => {
+                    clearTimeout(responseTimeoutTimer);
+                });
+            }
+
+
+            // wait for the response
+            stream.once('response', (headers) => {
                 (async () => {
 
                     // create our custom response stream
-                    const response = new HTTP2Response({
-                        stream: this._stream,
-                        headers: headers
-                    });
-
-                    delete this._stream;
+                    const response = new HTTP2Response(stream, headers);
 
                     if (this.expectedStatusCodes.size) {
                         if (!this.expectedStatusCodes.has(response.status())) {
@@ -416,7 +374,7 @@ class HTTP2Request extends HTTP2OutgoingMessage {
             });
 
             // send & end
-            this._stream.end(this.getData());
+            this.getRawStream().end(this.getData());
         });
     }
 }

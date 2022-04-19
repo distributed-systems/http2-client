@@ -1,4 +1,4 @@
-import { HTTP2IncomingMessage } from '../es-modules/distributed-systems/http2-lib/x/index.js'
+import { HTTP2IncomingMessage } from '@distributed-systems/http2-lib';
 
 
 export default class HTTP2Response extends HTTP2IncomingMessage {

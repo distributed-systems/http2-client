@@ -1,6 +1,6 @@
-import section from '../es-modules/distributed-systems/section-tests/x/index.js';
+import section from 'section-tests';
 import HTTP2Client from '../src/HTTP2Client.js';
-import HTTP2Server from '../es-modules/distributed-systems/http2-server/x/src/HTTP2Server.js'
+import HTTP2Server from '@distributed-systems/http2-server'
 import assert from 'assert';
 
 
@@ -14,7 +14,7 @@ section.continue('HTTP2 Errors', (section) => {
 
 
         server.getRouter().get('/test-1', (request) => {
-            request.response().status(200).send('the you go');
+            request.response().status(200).send('there you go');
         });
 
 

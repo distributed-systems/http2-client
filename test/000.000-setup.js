@@ -1,3 +1,3 @@
-import section, {SpecReporter} from '../es-modules/distributed-systems/section-tests/x/index.js';
+import section, { SpecReporter } from 'section-tests';
 
 section.use(new SpecReporter());

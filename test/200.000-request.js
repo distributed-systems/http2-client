@@ -1,6 +1,6 @@
-import section, {SpecReporter} from '../es-modules/distributed-systems/section-tests/x/index.js';
+import section from 'section-tests';
 import HTTP2Client from '../src/HTTP2Client.js';
-import HTTP2Server from '../es-modules/distributed-systems/http2-server/x/src/HTTP2Server.js'
+import HTTP2Server from '@distributed-systems/http2-server';
 import assert from 'assert';
 import path from 'path';
 import fs from 'fs';
@@ -44,6 +44,8 @@ section('HTTP2Request', (section) => {
             assert(data);
             assert.equal(typeof data, 'string');
             assert.equal(data, 'yeah!');
+
+            await client.end();
         });
 
 
@@ -51,7 +53,7 @@ section('HTTP2Request', (section) => {
         section.test('Execute 500 GET Requests', async () => {
             section.setTimeout(10000);
             const alphabets = 'abcdefghijklmnopqrstuvwxyz';
-            const str = Array(10000).fill(0).map(() => alphabets[Math.floor(Math.random() * alphabets.length)]).join('');
+            const str = Array(2000).fill(0).map(() => alphabets[Math.floor(Math.random() * alphabets.length)]).join('');
 
             // register the route
             server.getRouter().get('/test-1000', (request) => {
@@ -71,24 +73,65 @@ section('HTTP2Request', (section) => {
             }));
 
             assert.equal(executedRequests, 500);
+            await client.end();
         });
+
 
 
         section.test('GET Request client timeout', async () => {
 
             // register the route
-            server.getRouter().get('/test-1', () => {});
+            server.getRouter().get('/test-timeout', async(request) => {
+                await new Promise((resolve) => {
+                    setTimeout(() => {
+                        request.response().status(200).send();
+                        resolve();
+                    }, 1000);
+                });
+            });
 
 
             const client = new HTTP2Client();
-            const err = await client.get('http://l.dns.porn:8000/test-1')
-                .timeout(500)
-                .send().catch(err => err);
+            const request = client.get('https://l.dns.porn:8000/test-timeout');
+            request.ca(certificate);
+            request.timeout(500);
+            const err = await request.send().catch(err => err);
+
 
             assert(err);
             assert(err.message);
             assert(err.message.includes('timed out'));
+            await client.end();
         });
+
+
+
+        section.test('GET Request response timeout', async () => {
+
+            // register the route
+            server.getRouter().get('/test-timeout-2', async(request) => {
+                await new Promise((resolve) => {
+                    setTimeout(() => {
+                        request.response().status(200).send();
+                        resolve();
+                    }, 1000);
+                });
+            });
+
+
+            const client = new HTTP2Client();
+            const err = await client.get('https://l.dns.porn:8000/test-timeout-2')
+                .ca(certificate)
+                .responseTimeout(500)
+                .send().catch(err => err);
+
+
+            assert(err);
+            assert(err.message);
+            assert(err.message.includes('timed out'));
+            await client.end();
+        });
+
 
 
 
