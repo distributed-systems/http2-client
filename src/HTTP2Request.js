@@ -68,6 +68,11 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         }
 
         this.requestURL = new URL(url);
+        
+        if (this.requestURL.searchParams) {
+            this.setQuery(this.requestURL.searchParams);
+        }
+
         return this;
     }
 
@@ -171,13 +176,6 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
 
-
-
-
-
-
-
-
     /**
      * abort the request & response
      */
@@ -206,7 +204,6 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
 
-
     /**
      * alias for setQuery
      */
@@ -225,7 +222,11 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     * @returns {object} this
     */
     setQuery(parameters) {
-        if (Array.isArray(parameters)) {
+        if (parameters instanceof URLSearchParams) {
+            for (const [key, value] of parameters.entries()) {
+                this.setQueryParameter(key, value);
+            }
+        } else if (Array.isArray(parameters)) {
             for (const [key, value] of parameters) {
                 this.setQueryParameter(key, value);
             }
@@ -294,6 +295,14 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
 
+
+    getErrorSignature(err) {
+        return `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
+    }
+
+
+
+
     /**
     * send the request to the server
     *
@@ -311,9 +320,14 @@ class HTTP2Request extends HTTP2OutgoingMessage {
         return new Promise((resolve, reject) => {
             const stream = this.getStream();
 
+            this.once('error', (err) => {
+                err.message = this.getErrorSignature(err);
+                reject(err)
+            });
+
             // handle stream errors
             stream.once('error', (err) => {
-                err.message = `${this.methodName.toUpperCase()} request to '${this.requestURL}' errored: ${err.message}`;
+                err.message = this.getErrorSignature(err);
                 reject(err);
             });
 

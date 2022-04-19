@@ -31,7 +31,8 @@ export default class HTTP2ClientSession extends EventEmitter {
         });
         
         this.session.once('goaway', () => {
-            log.warn(`Session is going away ...`);
+            log.debug('The session has ended due to a goaway frame');
+            this._handleDestroyedSession();
         });
     }
 
@@ -43,7 +44,7 @@ export default class HTTP2ClientSession extends EventEmitter {
      */
     _handleDestroyedSession(err) {
         if (err) {
-            log.error(`Session error: ${err,message}`, err);
+            log.error(`Session error: ${err.message}`, err);
             this.emit('error', err);
         }
 

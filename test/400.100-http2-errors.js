@@ -26,7 +26,7 @@ section.continue('HTTP2 Errors', (section) => {
         assert.equal(response.status(), 200);
 
         for (const session of server.activeSessions.values()) {
-            session.goaway();
+            session.session.goaway();
         }
         
         const promise = client.get('http://l.dns.porn:8000/test-1?key=value').send();

@@ -138,6 +138,10 @@ class HTTP2Client {
                     this.sessions.delete(origin);
                 });
 
+                http2Session.once('error', () => {
+                    this.sessions.delete(origin);
+                });
+
                 await new Promise((resolve) => {
                     session.once('connect', () => {
                         resolve();

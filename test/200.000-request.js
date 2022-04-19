@@ -84,7 +84,6 @@ section('HTTP2Request', (section) => {
             server.getRouter().get('/test-timeout', async(request) => {
                 await new Promise((resolve) => {
                     setTimeout(() => {
-                        request.response().status(200).send();
                         resolve();
                     }, 1000);
                 });
@@ -112,7 +111,6 @@ section('HTTP2Request', (section) => {
             server.getRouter().get('/test-timeout-2', async(request) => {
                 await new Promise((resolve) => {
                     setTimeout(() => {
-                        request.response().status(200).send();
                         resolve();
                     }, 1000);
                 });
