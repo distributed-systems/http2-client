@@ -78,7 +78,13 @@ export default class HTTP2ClientSession extends EventEmitter {
      */
     request(headers) {
         const stream = this.session.request(headers);
-        return new HTTP2Stream(stream);
+        const http2Stream = new HTTP2Stream(stream);
+        
+        http2Stream.once('enhance_your_calm', () => {
+            this.end();
+        });
+
+        return http2Stream;
     }
 
 

@@ -128,18 +128,21 @@ class HTTP2Client {
     async createSession(origin, ca) {
         if (!this.sessions.has(origin)) {
             this.sessions.set(origin, (async() => {
-                const session = http2.connect(origin, {
-                    ca: ca || this.certificate,
+                const localOrigin = origin;
+                const localCa = ca;
+
+                const session = http2.connect(localOrigin, {
+                    ca: localCa || this.certificate,
                 });
 
                 const http2Session = new HTTP2ClientSession(session);
 
                 http2Session.once('close', () => {
-                    this.sessions.delete(origin);
+                    this.sessions.delete(localOrigin);
                 });
 
                 http2Session.once('error', () => {
-                    this.sessions.delete(origin);
+                    this.sessions.delete(localOrigin);
                 });
 
                 await new Promise((resolve) => {
@@ -152,7 +155,12 @@ class HTTP2Client {
             })());
         }
 
-        return this.sessions.get(origin);
+        const session = this.sessions.get(origin);
+
+        origin = null;
+        ca = null;
+        
+        return session;
     }
 }
 
