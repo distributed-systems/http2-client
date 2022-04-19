@@ -2,6 +2,7 @@ import logd from 'logd';
 import EventEmitter from 'events';
 import { HTTP2Stream } from '@distributed-systems/http2-lib'
 import LeakyBucket from 'leaky-bucket';
+import RequestRateLimiter from './RequestRateLimiter.js';
 
 
 const log = logd.module('HTTP2ClientSession');
@@ -13,8 +14,14 @@ export default class HTTP2ClientSession extends EventEmitter {
     constructor(session, {
         timeout = 60 * 1000,
         requestsPerSessionPerSecond,
+        maxConcurrentRequests,
     } = {}) {
         super();
+
+        // maximum of concurrent requests
+        if (maxConcurrentRequests) {
+            this.requestRateLimiter = new RequestRateLimiter(maxConcurrentRequests);
+        }
 
         // rate limiting
         if (requestsPerSessionPerSecond) {
@@ -46,8 +53,6 @@ export default class HTTP2ClientSession extends EventEmitter {
             log.debug('The session has ended due to a goaway frame');
             this._handleDestroyedSession();
         });
-
-        this.sentResuests = 0;
     }
 
 
@@ -97,14 +102,19 @@ export default class HTTP2ClientSession extends EventEmitter {
             await this.bucket.throttle();
         }
 
-        this.sentResuests++;
-
-        if (this.sentResuests % 1000 === 0) {
-            log.debug(`Sent ${this.sentResuests} requests`);
+        // check if we can create a new stream
+        if (this.requestRateLimiter ) {
+            await this.requestRateLimiter.throttle();
         }
 
         const stream = this.session.request(headers);
         const http2Stream = new HTTP2Stream(stream);
+
+        if (this.requestRateLimiter ) {
+            http2Stream.once('end', () => {
+                this.requestRateLimiter.release();
+            });
+        }
         
         // kill the session if the remote end think there is going on too much
         http2Stream.once('enhance_your_calm', () => {

@@ -59,7 +59,10 @@ section.continue('HTTP2 Errors', (section) => {
         await server.load();
         await server.listen(8000);
 
-        const client = new HTTP2Client();
+        const client = new HTTP2Client({
+            maxConcurrentRequests: null,
+            maxConcurrentConnections: null
+        });
 
         await Promise.all(Array(15000).fill(0).map(async (e, i) => {
             const response = await client.get(`http://l.dns.porn:8000/test/${i}`).send();

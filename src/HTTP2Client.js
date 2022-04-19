@@ -24,10 +24,12 @@ class HTTP2Client {
     constructor({
         sessionIdleTimeout = 60 * 1000,
         requestsPerSessionPerSecond = 10000,
+        maxConcurrentRequests = 100,
     } = {}) {
 
         // rate limiting options
         this.requestsPerSessionPerSecond = requestsPerSessionPerSecond;
+        this.maxConcurrentRequests = maxConcurrentRequests;
 
         // maintain a set of sessions to the specific hosts
         // in order to make effective use of http2
@@ -140,7 +142,8 @@ class HTTP2Client {
                 });
 
                 const http2Session = new HTTP2ClientSession(session, {
-                    requestsPerSessionPerSecond: this.requestsPerSessionPerSecond
+                    requestsPerSessionPerSecond: this.requestsPerSessionPerSecond,
+                    maxConcurrentRequests: this.maxConcurrentRequests,
                 });
 
                 http2Session.once('close', () => {

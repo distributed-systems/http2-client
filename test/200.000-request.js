@@ -61,7 +61,11 @@ section('HTTP2Request', (section) => {
             });
 
 
-            const client = new HTTP2Client();
+            const client = new HTTP2Client({
+                maxConcurrentRequests: null,
+                maxConcurrentConnections: null
+            });
+            
             let executedRequests = 0;
 
             await Promise.all(Array(500).fill(0).map(async () => {
