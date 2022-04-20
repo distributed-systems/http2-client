@@ -65,13 +65,14 @@ section('HTTP2Request', (section) => {
                 maxConcurrentRequests: null,
                 maxConcurrentConnections: null
             });
-            
+
             let executedRequests = 0;
 
             await Promise.all(Array(500).fill(0).map(async () => {
                 const request = client.get('https://l.dns.porn:8000/test-1000');
                 request.ca(certificate);
                 const response = await request.send();
+                await response.getData();
                 assert.equal(response.status(), 200);
                 executedRequests++;
             }));

@@ -98,7 +98,7 @@ export default class HTTP2ClientSession extends EventEmitter {
      * @param {*} headers 
      */
     async request(headers) {
-        log.debug(`Creating a new stream for origin ${headers[':path']}`);
+        log.debug(`Creating a new stream for method ${headers[':method']} and path ${headers[':path']}`);
 
         // rate limiting
         if (this.bucket) {
@@ -111,10 +111,10 @@ export default class HTTP2ClientSession extends EventEmitter {
         }
 
         const stream = this.session.request(headers);
-        const http2Stream = new HTTP2Stream(stream);
+        const http2Stream = new HTTP2Stream(stream, `Client: ${headers[':method']} ${headers[':path']}`);
 
         // release the request slot
-        if (this.requestRateLimiter ) {
+        if (this.requestRateLimiter) {
             http2Stream.once('end', () => {
                 this.requestRateLimiter.release();
             });
@@ -126,7 +126,7 @@ export default class HTTP2ClientSession extends EventEmitter {
             this.end();
         });
 
-        log.debug(`Created a new stream for origin ${headers[':path']}`);
+        log.debug(`Created a new stream for method ${headers[':method']} and path ${headers[':path']}`);
 
         return http2Stream;
     }

@@ -4,7 +4,7 @@
   "description": "simple http2 client",
   "main": "./src/HTTP2Client.js",
   "scripts": {
-    "test": "node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.js --dev --log-level=debug+ --log-module=* --l"
+    "test": "node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.js --dev --log-level=info+ --log-module=* --l"
   },
   "author": "Lina van der Weg",
   "license": "MIT",

@@ -18,6 +18,7 @@ export default class RequestRateLimiter {
         this.openRequests--;
 
         if (this.queue.length > 0) {
+            log.debug(`Releasing request at position 0 of ${this.queue.length}`);
             const nextRequest = this.queue.shift();
             this.openRequests++;
             nextRequest();

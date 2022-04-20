@@ -5,6 +5,7 @@ import assert from 'assert';
 
 
 
+
 section.continue('HTTP2 Errors', (section) => {
 
     section.test('GoAway', async () => {
@@ -23,6 +24,7 @@ section.continue('HTTP2 Errors', (section) => {
 
         const client = new HTTP2Client();
         const response = await client.get('http://l.dns.porn:8000/test-1?key=value').send();
+        await response.getData();
         assert.equal(response.status(), 200);
 
         for (const session of server.activeSessions.values()) {
@@ -66,6 +68,7 @@ section.continue('HTTP2 Errors', (section) => {
 
         await Promise.all(Array(15000).fill(0).map(async (e, i) => {
             const response = await client.get(`http://l.dns.porn:8000/test/${i}`).send();
+            await response.getData();
             assert.equal(response.status(), 200);
         }));
 
