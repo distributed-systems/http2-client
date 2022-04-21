@@ -23,7 +23,7 @@ section.continue('HTTP2 Errors', (section) => {
         await server.listen(8000);
 
         const client = new HTTP2Client();
-        const response = await client.get('http://l.dns.porn:8000/test-1?key=value').send();
+        const response = await client.get('http://l.dns.porn:8000/test-1?key=first').send();
         await response.getData();
         assert.equal(response.status(), 200);
 
@@ -31,7 +31,7 @@ section.continue('HTTP2 Errors', (section) => {
             session.session.goaway();
         }
         
-        const promise = client.get('http://l.dns.porn:8000/test-1?key=value').send();
+        const promise = client.get('http://l.dns.porn:8000/test-1?key=second').send();
         let errored = false;
 
         await promise.catch((err) => {

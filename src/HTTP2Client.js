@@ -2,6 +2,7 @@ import http2 from 'http2';
 import HTTP2ClientSession from './HTTP2ClientSession.js';
 import HTTP2Request from './HTTP2Request.js';
 import logd from 'logd';
+import { setTimeout } from 'timers/promises';
 
 
 const log = logd.module('HTTP2Client');
@@ -131,15 +132,29 @@ class HTTP2Client {
 
 
 
-    async createStream(origin, headers, ca) {
+    async createStream(origin, headers, ca, reconnectRetries = 0) {
         const session = await this.createSession(origin, ca);
-        return session.request(headers);
+
+        try {
+            return session.request(headers);
+        } catch (err) {
+            if (err.reconnect && reconnectRetries < 5) {
+                const timeoutTime = (reconnectRetries + 1) * 100;
+
+                log.debug(`[Client ${origin}] Stream creation failed. Reconnecting in ${timeoutTime}ms`);
+
+                await setTimeout(timeoutTime);
+                return this.createStream(origin, headers, ca, reconnectRetries + 1);
+            } else {
+                throw err;
+            }
+        }
     }
 
 
     async createSession(origin, ca) {
         if (!this.sessions.has(origin)) {
-            log.debug(`Creating a new session for ${origin}`);
+            log.debug(`[Client ${origin}] Creating a new session`);
             this.sessions.set(origin, (async() => {
                 const localOrigin = origin;
                 const localCa = ca;
@@ -163,7 +178,7 @@ class HTTP2Client {
 
                 await new Promise((resolve) => {
                     session.once('connect', () => {
-                        log.debug(`Connected to ${localOrigin}`);
+                        log.debug(`[Client ${localOrigin}] Connected`);
                         resolve();
                     });
                 });

@@ -98,19 +98,62 @@ export default class HTTP2ClientSession extends EventEmitter {
      * @param {*} headers 
      */
     async request(headers) {
-        log.debug(`Creating a new stream for method ${headers[':method']} and path ${headers[':path']}`);
+        const signature = `[Client] ${headers[':method']} ${headers[':path']}`;
+
+        log.debug(`${signature}: Creating a new stream`);
 
         // rate limiting
         if (this.bucket) {
+            log.debug(`${signature}: waiting for request rate limiter`);
             await this.bucket.throttle();
+            log.debug(`${signature}: continuing after rate limiting`);
         }
 
         // check if we can create a new stream
         if (this.requestRateLimiter ) {
+            log.debug(`${signature}: waiting for concurrent request rate limiter`);
             await this.requestRateLimiter.throttle();
+            log.debug(`${signature}: continuing after concurrent request rate limiting`);
         }
 
         const stream = this.session.request(headers);
+
+        log.debug(`${signature}: stream created, waiting for ready event`);
+
+
+        await new Promise((resolve, reject) => {
+
+            // the ready event is not fired. maybe because the stream is already ready
+            // this may be a workaround but it may also not help detecting invalid streams
+            // or make the application hang. no good!
+            if (Number.isInteger(stream.id)) {
+                log.debug(`${signature}: stream has an id and is thus ready`);
+                return resolve();
+            }
+
+            stream.once('ready', () => {
+                log.debug(`${signature}: stream is ready`);
+                stream.removeAllListeners();
+                resolve();
+            });
+
+            stream.once('error', (err) => {
+                if (err.code === 'NGHTTP2_STREAM_CLOSED' ||
+                    err.code === 'NGHTTP2_REFUSED_STREAM'||
+                    err.code === 'NGHTTP2_ENHANCE_YOUR_CALM'||
+                    err.code === 'NGHTTP2_CANCEL') {
+                    log.debug(`${signature}: remote end refused to create stream: ${err.message}`);
+                    
+                    err.reconnect = true;
+                    
+                    // kill the session
+                    this.end();
+                }
+
+                reject(err);
+            });
+        });
+
         const http2Stream = new HTTP2Stream(stream, `Client: ${headers[':method']} ${headers[':path']}`);
 
         // release the request slot
@@ -122,11 +165,11 @@ export default class HTTP2ClientSession extends EventEmitter {
         
         // kill the session if the remote end think there is going on too much
         http2Stream.once('enhance_your_calm', () => {
-            log.debug('The remote end has said to enhance your calm');
+            log.debug(`${signature}: The remote end has said to enhance your calm`);
             this.end();
         });
 
-        log.debug(`Created a new stream for method ${headers[':method']} and path ${headers[':path']}`);
+        log.debug(`${signature}: Created a new stream`);
 
         return http2Stream;
     }
