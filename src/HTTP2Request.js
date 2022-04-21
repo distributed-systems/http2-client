@@ -33,6 +33,9 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     }) {
         super();
 
+        // get requests are repetadly send if they fail
+        this._retryCount = 5;
+
         this.createStream = createStream;
 
         if (hostname) this.hostname = hostname;
@@ -315,9 +318,8 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     async send(data) {
         this.setData(data);
         this.prepareData();
-        
 
-        // send headers
+        // send headers, creates a new stream
         await this.sendHeaders();
 
         // wait for the response before we're returning a thing
@@ -329,11 +331,6 @@ class HTTP2Request extends HTTP2OutgoingMessage {
                 reject(err)
             });
 
-            // handle stream errors
-            stream.once('error', (err) => {
-                err.message = this.getErrorSignature(err);
-                reject(err);
-            });
 
             if (this._timeoutTime) {
                 let timeoutTimer = setTimeout(() => {
