@@ -52,7 +52,7 @@ export default class HTTP2ClientSession extends EventEmitter {
         });
         
         this.session.once('goaway', () => {
-            log.debug('The session has ended due to a goaway frame');
+            log.debug(`[Client session: ${this.session.id}] The session has ended due to a goaway frame`);
             this._handleDestroyedSession();
         });
     }
@@ -64,6 +64,8 @@ export default class HTTP2ClientSession extends EventEmitter {
      * @param {Error} err 
      */
     _handleDestroyedSession(err) {
+        log.debug(`[Client session:${this.session.id}] _handleDestroyedSession() method was called`);
+        
         if (err) {
             log.error(`Session error: ${err.message}`, err);
             this.emit('error', err);
@@ -98,27 +100,27 @@ export default class HTTP2ClientSession extends EventEmitter {
      * @param {*} headers 
      */
     async request(headers) {
-        const signature = `[Client] ${headers[':method']} ${headers[':path']}`;
+        const signature = `${headers[':method']} ${headers[':path']}`;
 
-        log.debug(`${signature}: Creating a new stream`);
+        log.debug(`[Client session:${this.session.id}] ${signature}: Creating a new stream`);
 
         // rate limiting
         if (this.bucket) {
-            log.debug(`${signature}: waiting for request rate limiter`);
+            log.debug(`[Client session:${this.session.id}] ${signature}: waiting for request rate limiter`);
             await this.bucket.throttle();
-            log.debug(`${signature}: continuing after rate limiting`);
+            log.debug(`[Client session:${this.session.id}] ${signature}: continuing after rate limiting`);
         }
 
         // check if we can create a new stream
         if (this.requestRateLimiter ) {
-            log.debug(`${signature}: waiting for concurrent request rate limiter`);
+            log.debug(`[Client session:${this.session.id}] ${signature}: waiting for concurrent request rate limiter`);
             await this.requestRateLimiter.throttle();
-            log.debug(`${signature}: continuing after concurrent request rate limiting`);
+            log.debug(`[Client session:${this.session.id}] ${signature}: continuing after concurrent request rate limiting`);
         }
 
         const stream = this.session.request(headers);
 
-        log.debug(`${signature}: stream created, waiting for ready event`);
+        log.debug(`[Client session:${this.session.id}, stream:${stream.id}] ${signature}: stream created, waiting for ready event`);
 
 
         await new Promise((resolve, reject) => {
@@ -127,12 +129,12 @@ export default class HTTP2ClientSession extends EventEmitter {
             // this may be a workaround but it may also not help detecting invalid streams
             // or make the application hang. no good!
             if (Number.isInteger(stream.id)) {
-                log.debug(`${signature}: stream has an id and is thus ready`);
+                log.debug(`[Client session:${this.session.id}, stream:${stream.id}] ${signature}: stream has an id and is thus ready`);
                 return resolve();
             }
 
             stream.once('ready', () => {
-                log.debug(`${signature}: stream is ready`);
+                log.debug(`[Client session:${this.session.id}, stream:${stream.id}] ${signature}: stream is ready`);
                 stream.removeAllListeners();
                 resolve();
             });
@@ -142,7 +144,7 @@ export default class HTTP2ClientSession extends EventEmitter {
                     err.code === 'NGHTTP2_REFUSED_STREAM'||
                     err.code === 'NGHTTP2_ENHANCE_YOUR_CALM'||
                     err.code === 'NGHTTP2_CANCEL') {
-                    log.debug(`${signature}: remote end refused to create stream: ${err.message}`);
+                    log.debug(`[Client session:${this.session.id}, stream:${stream.id}] ${signature}: remote end refused to create stream: ${err.message}`);
                     
                     err.reconnect = true;
                     
@@ -165,11 +167,11 @@ export default class HTTP2ClientSession extends EventEmitter {
         
         // kill the session if the remote end think there is going on too much
         http2Stream.once('enhance_your_calm', () => {
-            log.debug(`${signature}: The remote end has said to enhance your calm`);
+            log.debug(`[Client session:${this.session.id}, stream:${http2Stream.getStream().id}]${signature}: The remote end has said to enhance your calm`);
             this.end();
         });
 
-        log.debug(`${signature}: Created a new stream`);
+        log.debug(`[Client session:${this.session.id}, stream:${stream.id}] ${signature}: Created a new stream`);
 
         return http2Stream;
     }
@@ -179,6 +181,7 @@ export default class HTTP2ClientSession extends EventEmitter {
      * actively close the session
      */
     end() {
+        log.debug(`[Client session:${this.session.id}] end() method was called`);
         this.session.close();
     }
 }
