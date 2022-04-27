@@ -8,6 +8,14 @@ import RequestRateLimiter from './RequestRateLimiter.js';
 const log = logd.module('HTTP2ClientSession');
 
 
+let id = 0;
+const getUniqueId = () => {
+    if (id === Number.MAX_SAFE_INTEGER) {
+        id = 0;
+    } 
+    return id++;
+}
+
 
 export default class HTTP2ClientSession extends EventEmitter {
 
@@ -19,7 +27,7 @@ export default class HTTP2ClientSession extends EventEmitter {
         super();
 
         // cache the sessions id
-        this.sessionId = session.id;
+        this.sessionId = session.id || getUniqueId();
 
         this._logIdentifier = `Client session ${this.sessionId}`;
 
