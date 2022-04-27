@@ -28,29 +28,13 @@ export default class HTTP2ClientSession extends EventEmitter {
 
         // cache the sessions id
         this.sessionId = session.id || getUniqueId();
-
         this._logIdentifier = `Client session ${this.sessionId}`;
 
-        // maximum of concurrent requests
-        if (maxConcurrentRequests) {
-            log.debug(`Setting max concurrent requests to ${maxConcurrentRequests}`);
-            this.requestRateLimiter = new RequestRateLimiter(maxConcurrentRequests);
-        }
-
-        // rate limiting
-        if (requestsPerSessionPerSecond) {
-            log.debug(`Setting requests per session per second to ${requestsPerSessionPerSecond}`);
-            this.bucket = new LeakyBucket({
-                capacity: requestsPerSessionPerSecond,
-                interval: 1,
-                timeout: 3600,
-            });
-        }
 
         this.session = session;
 
         // close the session after 60 seonds of idle time
-        this.session.setTimeout(timeout);
+        this.session.setTimeout(0);
 
         this.session.once('timeout', () => {
             this.end();
@@ -67,6 +51,23 @@ export default class HTTP2ClientSession extends EventEmitter {
         this.session.once('goaway', () => {
             log.debug(`${this.getLogId()} The session has ended due to a goaway frame`);
         });
+
+
+        // maximum of concurrent requests
+        if (maxConcurrentRequests) {
+            log.debug(`Setting max concurrent requests to ${maxConcurrentRequests}`);
+            this.requestRateLimiter = new RequestRateLimiter(maxConcurrentRequests);
+        }
+
+        // rate limiting
+        if (requestsPerSessionPerSecond) {
+            log.debug(`Setting requests per session per second to ${requestsPerSessionPerSecond}`);
+            this.bucket = new LeakyBucket({
+                capacity: requestsPerSessionPerSecond,
+                interval: 1,
+                timeout: 3600,
+            });
+        }
     }
 
 
