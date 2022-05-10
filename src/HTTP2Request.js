@@ -364,6 +364,10 @@ class HTTP2Request extends HTTP2OutgoingMessage {
                     // create our custom response stream
                     const response = new HTTP2Response(stream, headers);
 
+                    response.once('error', (err) => {
+                        log.warn(`[Client Response ${this.methodName.toUpperCase()} ${this.requestURL}] Error: ${err.message}`, err);
+                    });
+
                     if (this.expectedStatusCodes.size) {
                         if (!this.expectedStatusCodes.has(response.status())) {
                             const statusCodesMessage = this.expectedStatusCodes.size === 1 ? 

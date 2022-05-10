@@ -223,6 +223,9 @@ methods.forEach((method) => {
             staticHeaders: this.staticHeaders,
         });
 
+        request.once('error', (err) => {
+            log.warn(`[Client Request] Error: ${err.message}`, err);
+        });
 
         return request[method](requestURL);
     }

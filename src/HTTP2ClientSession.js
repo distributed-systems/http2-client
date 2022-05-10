@@ -37,7 +37,7 @@ export default class HTTP2ClientSession extends EventEmitter {
         this.session.setTimeout(0);
 
         this.session.once('timeout', () => {
-            this.end();
+            log.debug('The session has ended due to a timeout');
         });
 
         this.session.once('close', () => {
