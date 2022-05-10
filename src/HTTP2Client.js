@@ -155,6 +155,7 @@ class HTTP2Client {
     async createSession(origin, ca) {
         if (!this.sessions.has(origin)) {
             log.debug(`[Client ${origin}] Creating a new session`);
+
             this.sessions.set(origin, (async() => {
                 const localOrigin = origin;
                 const localCa = ca;
@@ -176,10 +177,14 @@ class HTTP2Client {
                     this.sessions.delete(localOrigin);
                 });
 
-                await new Promise((resolve) => {
+                await new Promise((resolve, reject) => {
                     session.once('connect', () => {
                         log.debug(`[Client ${localOrigin}] Connected`);
                         resolve();
+                    });
+
+                    session.once('error', (err) => {
+                        reject(err);
                     });
                 });
 

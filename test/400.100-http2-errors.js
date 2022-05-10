@@ -74,4 +74,15 @@ section.continue('HTTP2 Errors', (section) => {
 
         await server.close();
     });
+
+
+    section.test('Not reachable server', async () => {
+        section.setTimeout(2000);
+
+        const client = new HTTP2Client();
+
+        const err = await client.get(`http://l.dns.porn:8000/test/`).send().catch(err => err);;
+        assert(err);
+        await client.end();
+    });
 });
