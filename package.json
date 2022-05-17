@@ -4,12 +4,12 @@
   "description": "simple http2 client",
   "main": "./src/HTTP2Client.js",
   "scripts": {
-    "test": "node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.js --dev --log-level=info+ --log-module=* --l"
+    "test": "node --no-warnings --experimental-modules ./node_modules/.bin/section ./test/*.js --dev"
   },
   "author": "Lina van der Weg",
   "license": "MIT",
   "dependencies": {
-    "@distributed-systems/http2-lib": "^3.0.16",
+    "@distributed-systems/http2-lib": "^3.0.18",
     "leaky-bucket": "^4.1.4",
     "logd": "^2.3.1"
   },

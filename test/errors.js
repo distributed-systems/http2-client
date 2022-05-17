@@ -9,9 +9,9 @@ import assert from 'assert';
 section.continue('HTTP2 Errors', (section) => {
 
     section.test('GoAway', async () => {
-        const server = new HTTP2Server({
-            secure: false
-        });
+        const server = new HTTP2Server({ secure: false });
+        await server.load();
+        await server.listen(7923);
 
 
         server.getRouter().get('/test-1', (request) => {
@@ -19,11 +19,8 @@ section.continue('HTTP2 Errors', (section) => {
         });
 
 
-        await server.load();
-        await server.listen(8000);
-
         const client = new HTTP2Client();
-        const response = await client.get('http://l.dns.porn:8000/test-1?key=first').send();
+        const response = await client.get('http://l.dns.porn:7923/test-1').send();
         await response.getData();
         assert.equal(response.status(), 200);
 
@@ -31,7 +28,7 @@ section.continue('HTTP2 Errors', (section) => {
             session.session.goaway();
         }
         
-        const promise = client.get('http://l.dns.porn:8000/test-1?key=second').send();
+        const promise = client.get('http://l.dns.porn:7923/test-1').send();
         let errored = false;
 
         await promise.catch((err) => {
@@ -48,9 +45,9 @@ section.continue('HTTP2 Errors', (section) => {
     section.test('Enhance your calm', async () => {
         section.setTimeout(10000);
 
-        const server = new HTTP2Server({
-            secure: false
-        });
+        const server = new HTTP2Server({ secure: false });
+        await server.load();
+        await server.listen(8621);
 
 
         server.getRouter().get('/test/:id', (request) => {
@@ -58,22 +55,20 @@ section.continue('HTTP2 Errors', (section) => {
         });
 
 
-        await server.load();
-        await server.listen(8000);
-
         const client = new HTTP2Client({
             maxConcurrentRequests: null,
             maxConcurrentConnections: null
         });
 
         await Promise.all(Array(15000).fill(0).map(async (e, i) => {
-            const response = await client.get(`http://l.dns.porn:8000/test/${i}`).send();
+            const response = await client.get(`http://l.dns.porn:8621/test/${i}`).send();
             await response.getData();
             assert.equal(response.status(), 200);
         }));
 
         await server.close();
     });
+
 
 
     section.test('Not reachable server', async () => {

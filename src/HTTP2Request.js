@@ -309,6 +309,17 @@ class HTTP2Request extends HTTP2OutgoingMessage {
 
 
 
+    setCookie(name, value) {
+        if (this.hasHeader('cookie')) {
+            this.setHeader('cookie', `${this.getHeader('cookie')}; ${name}=${value}`);
+        } else {
+            this.setHeader('Cookie', `${name}=${value}`);
+        }
+        return this;
+    }
+
+
+
 
     /**
     * send the request to the server
