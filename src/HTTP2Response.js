@@ -71,16 +71,17 @@ export default class HTTP2Response extends HTTP2IncomingMessage {
 
 
     getCookies() {
+        const cookies = [];
+
         if (this.hasHeader('set-cookie')) {
             const cookieString = this.getHeader('set-cookie');
             const cookieArray = cookieString.split(',');
-            const cookies = [];
 
             for (const cookie of cookieArray) {
                 cookies.push(this.extractCookie(cookie));
             }
-
-            return cookies;
         }
+        
+        return cookies;
     }
 }

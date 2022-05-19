@@ -319,6 +319,13 @@ class HTTP2Request extends HTTP2OutgoingMessage {
     }
 
 
+    setCookies(cookies) {
+        if (Array.isArray(cookies)) {
+            cookies.forEach(cookie => this.setCookie(cookie.name, cookie.value));
+        }
+    }
+
+
 
 
     /**
